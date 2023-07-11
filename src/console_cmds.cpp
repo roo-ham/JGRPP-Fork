@@ -3675,6 +3675,17 @@ DEF_CONSOLE_CMD(ConDumpInfo)
 	return false;
 }
 
+DEF_CONSOLE_CMD(ConFileToTown)
+{
+	if (argc != 2) {
+		IConsolePrintF(CC_ERROR, "Error. just type 'test_ftt [file_directory]'");
+		return true;
+	}
+
+	GenTownFromFile(argv);
+	return true;
+}
+
 /*******************************
  * console command registration
  *******************************/
@@ -3864,6 +3875,7 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("recalculate_road_cached_one_way_states", ConRecalculateRoadCachedOneWayStates, ConHookNoNetwork, true);
 	IConsole::CmdRegister("misc_debug",              ConMiscDebug,        nullptr, true);
 	IConsole::CmdRegister("set_newgrf_optimiser_flags", ConSetNewGRFOptimiserFlags, nullptr, true);
+	IConsole::CmdRegister("test_ftt",				 ConFileToTown,		  nullptr, true);
 
 	/* NewGRF development stuff */
 	IConsole::CmdRegister("reload_newgrfs",          ConNewGRFReload,     ConHookNewGRFDeveloperTool);

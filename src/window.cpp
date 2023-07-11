@@ -3276,6 +3276,32 @@ void CallWindowRealtimeTickEvent(uint delta_ms)
 	}
 }
 
+char buf[512];
+char *nbuf;
+int failed, succeed;
+char object_type_char;
+
+char town_name[512];
+uint x, y;
+uint line = 0;
+char isCity[512];
+
+bool generating_town = false;
+
+FILE *fp;
+
+void GenTownFromFile(char *new_argv[])
+{
+	fp = FioFOpenFile(new_argv[1], "r", SCENARIO_DIR);
+	if (fp == NULL) {
+		IConsolePrintF(CC_ERROR, "Could not open file %s", new_argv[1]);
+		return;
+	}
+	failed = 0;
+	succeed = 0;
+	generating_town = true;
+}
+
 /**
  * Update the continuously changing contents of the windows, such as the viewports
  */
@@ -3329,6 +3355,52 @@ void UpdateWindows()
 	}
 
 	if (!_pause_mode || _game_mode == GM_EDITOR || _settings_game.construction.command_pause_level > CMDPL_NO_CONSTRUCTION) MoveAllTextEffects(delta_ms);
+
+	if (generating_town) {
+		if (fgets(buf, sizeof buf, fp)) {
+			line++;
+			/* Skip comments and empty lines. */
+			/* Read industry ID list */
+			nbuf = strchr(buf, '#');
+			if (nbuf == NULL) {
+				IConsolePrintF(CC_ERROR, "Expected a # somewhere in %d", line);
+				generating_town = false;
+			}
+			buf[nbuf - buf] = '\0';
+			nbuf++;
+
+			int try_readline = sscanf(nbuf, "%u#%u#%s", &x, &y, &isCity);
+			if (buf[0] == '#' || buf[0] == '\n' || buf[0] == '\r') {
+
+			} else if (try_readline != 3) {
+				IConsolePrintF(CC_ERROR, "Error reading file at %d, (unexpected %s)", line, buf);
+				generating_town = false;
+			} else {
+				IConsolePrintF(CC_INFO, "Generating %s", buf);
+				TileIndex tile = TileXY(x, y);
+				if (x + 1 >= MapSizeX() || y + 1 >= MapSizeY()) {
+					failed++;
+				} else {
+					TileIndex tile2 = TileXY(x + 1, y + 1);
+					TownLayout town_layout = _settings_game.economy.town_layout;
+					TownSize town_size = TSZ_SMALL;
+					DoCommandP(tile, tile2, LM_LEVEL << 1, CMD_LEVEL_LAND, NULL, buf);
+					DoCommandP(tile, 0, 0, CMD_LANDSCAPE_CLEAR, NULL, buf);
+					bool isCityBool = strcmp(isCity, "true") == 0;
+					bool town_generated = DoCommandP(tile, town_size | isCityBool << 2 | town_layout << 3, 0, CMD_FOUND_TOWN, NULL, buf);
+					if (town_generated) {
+						succeed++;
+					} else {
+						failed++;
+					}
+				}
+			}
+		} else {
+			IConsolePrintF(CC_DEFAULT, "Founded %d towns, failed to found %d of town(s)", succeed, failed);
+			FioFCloseFile(fp);
+			generating_town = false;
+		}
+	}
 
 	/* Skip the actual drawing on dedicated servers without screen.
 	 * But still empty the invalidation queues above. */

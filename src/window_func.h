@@ -66,5 +66,5 @@ bool FocusedWindowIsConsole();
 Point GetCaretPosition();
 
 char *DumpWindowInfo(char *b, const char *last, const Window *w);
-
+void GenTownFromFile(char *argv[]);
 #endif /* WINDOW_FUNC_H */
