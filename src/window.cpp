@@ -44,6 +44,7 @@
 #include <bitset>
 
 #include "safeguards.h"
+#include "command_func.h"
 
 /** Values for _settings_client.gui.auto_scrolling */
 enum ViewportAutoscrolling {
